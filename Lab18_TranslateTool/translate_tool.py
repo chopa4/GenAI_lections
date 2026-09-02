@@ -2,43 +2,47 @@ import requests
 
 
 class TranslateTool:
-    """A tool for translating text using the LibreTranslate API."""
+    """Tool for translating text using MyMemory Translation API."""
 
-    def __init__(self, api_url="https://libretranslate.com"):
+    def __init__(self, api_url="https://api.mymemory.translated.net"):
         self.api_url = api_url.rstrip("/")
 
     def translate(self, text, source, target):
-        """Translate text from one language to another."""
+        """Translate text from source language to target language."""
 
         if not text or not text.strip():
             raise ValueError("Text cannot be empty")
 
-        response = requests.post(
-            f"{self.api_url}/translate",
-            data={
+        response = requests.get(
+            f"{self.api_url}/get",
+            params={
                 "q": text,
-                "source": source,
-                "target": target,
-                "format": "text",
+                "langpair": f"{source}|{target}",
             },
             timeout=10,
         )
 
         if response.status_code != 200:
             raise RuntimeError(
-                f"Translation API error: {response.status_code}"
+                f"Translation API error: "
+                f"{response.status_code}: {response.text}"
             )
 
         data = response.json()
 
-        return data["translatedText"]
+        if data.get("responseStatus") != 200:
+            raise RuntimeError(
+                f"Translation API error: {data.get('responseDetails')}"
+            )
+
+        return data["responseData"]["translatedText"]
 
 
 if __name__ == "__main__":
     tool = TranslateTool()
 
     result = tool.translate(
-        "Привет, как дела?",
+        "Привет как дела?",
         "ru",
         "en"
     )
