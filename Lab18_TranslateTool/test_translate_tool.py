@@ -11,16 +11,23 @@ def test_translate_success():
     mock_response = Mock()
     mock_response.status_code = 200
     mock_response.json.return_value = {
-        "translatedText": "Hello, world!"
+        "responseStatus": 200,
+        "responseData": {
+            "translatedText": "Hello, how are you?"
+        }
     }
 
     with patch(
-        "translate_tool.requests.post",
+        "translate_tool.requests.get",
         return_value=mock_response
     ):
-        result = tool.translate("Привет, мир!", "ru", "en")
+        result = tool.translate(
+            "Привет, как дела?",
+            "ru",
+            "en"
+        )
 
-    assert result == "Hello, world!"
+    assert result == "Hello, how are you?"
 
 
 def test_empty_text():
@@ -39,23 +46,36 @@ def test_whitespace_text():
         tool.translate("   ", "ru", "en")
 
 
-def test_api_error():
-    """Test API error handling."""
+def test_http_error():
+    """Test HTTP error handling."""
     tool = TranslateTool()
 
     mock_response = Mock()
     mock_response.status_code = 500
+    mock_response.text = "Internal Server Error"
 
     with patch(
-        "translate_tool.requests.post",
+        "translate_tool.requests.get",
         return_value=mock_response
     ):
         with pytest.raises(RuntimeError):
             tool.translate("Привет", "ru", "en")
 
 
-def test_custom_api_url():
-    """Test custom API URL configuration."""
-    tool = TranslateTool("https://example.com/")
+def test_api_error():
+    """Test API error response handling."""
+    tool = TranslateTool()
 
-    assert tool.api_url == "https://example.com"
+    mock_response = Mock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {
+        "responseStatus": 403,
+        "responseDetails": "Quota exceeded"
+    }
+
+    with patch(
+        "translate_tool.requests.get",
+        return_value=mock_response
+    ):
+        with pytest.raises(RuntimeError):
+            tool.translate("Привет", "ru", "en")
