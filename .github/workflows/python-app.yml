@@ -21,5 +21,6 @@ jobs:
           pip install pytest requests
 
       - name: Run tests
+        working-directory: 3_1_LLM_agent
         run: |
           python -m pytest tests -v
