@@ -1,4 +1,5 @@
 import requests
+import json
 
 
 class TranslateTool:
@@ -37,12 +38,48 @@ class TranslateTool:
 
         return data["responseData"]["translatedText"]
 
+    def use(self, tool_input):
+        """
+        Метод для вызова инструмента из LLMAgent.
+
+        Ожидает JSON:
+        {
+            "text": "Привет",
+            "source": "ru",
+            "target": "en"
+        }
+        """
+
+        if isinstance(tool_input, str):
+            data = json.loads(tool_input)
+        else:
+            data = tool_input
+
+        text = data.get("text")
+        source = data.get("source")
+        target = data.get("target")
+
+        if not text:
+            raise ValueError("Translation text is required")
+
+        if not source:
+            raise ValueError("Source language is required")
+
+        if not target:
+            raise ValueError("Target language is required")
+
+        return self.translate(
+            text,
+            source,
+            target
+        )
+
 
 if __name__ == "__main__":
     tool = TranslateTool()
 
     result = tool.translate(
-        "Привет как дела?",
+        "Привет Кирилл из России",
         "ru",
         "en"
     )
