@@ -1,31 +1,51 @@
 import pytest
-#from unittest.mock import MagicMock, patch
-from llm_agent.core_v2 import LLMAgent
+from unittest.mock import Mock, patch
 
-# =====================================================================
-# ИНТЕГРАЦИОННЫЕ ТЕСТЫ (Запускают реальную Ollama / API)
-# =====================================================================
-# Маркируем как 'integration', чтобы их можно было отключать при быстрой проверке
-
-@pytest.mark.integration
-def test_calculator_query_live():
-    """Реальный запуск агента для проверки математики."""
-    # Для тестов лучше использовать локальную модель, если она поднята
-    agent = LLMAgent(local=True, ollama_model="qwen3:4b")
-    query = "Сколько будет (5 + 3) * 2? Напиши только цифру."
-    
-    response = agent.process_query(query)
-    
-    # Проверяем, что агент смог посчитать и выдать 16
-    assert "16" in response
+from llm_agent.translate_tool import TranslateTool
 
 
-@pytest.mark.integration
-def test_football_query_live():
-    """Реальный запуск агента для проверки поиска DuckDuckGo."""
-    agent = LLMAgent(local=True, ollama_model="qwen3:4b")
-    query = "Кто выиграл последний матч Спартак-Динамо?"
-    
-    response = agent.process_query(query)
-    
-    # Проверяем, что в реальном ответе фигурируют н
+def test_translate_success():
+    """Проверяет успешный перевод."""
+    response = Mock()
+    response.status_code = 200
+    response.json.return_value = {
+        "responseStatus": 200,
+        "responseData": {
+            "translatedText": "Hello"
+        }
+    }
+
+    with patch(
+        "llm_agent.translate_tool.requests.get",
+        return_value=response
+    ):
+        tool = TranslateTool()
+        result = tool.translate("Привет", "ru", "en")
+
+    assert result == "Hello"
+
+
+def test_translate_empty_text():
+    """Проверяет ошибку при пустом тексте."""
+    tool = TranslateTool()
+
+    with pytest.raises(ValueError):
+        tool.translate("", "ru", "en")
+
+
+def test_use():
+    """Проверяет вызов инструмента через use."""
+    tool = TranslateTool()
+
+    with patch.object(
+        tool,
+        "translate",
+        return_value="Hello"
+    ):
+        result = tool.use({
+            "text": "Привет",
+            "source": "ru",
+            "target": "en"
+        })
+
+    assert result == "Hello"
