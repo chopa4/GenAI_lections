@@ -21,13 +21,31 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pytest requests coverage
+          pip install pytest requests coverage python-decouple duckduckgo-search
+
+      - name: Install Ollama
+        run: |
+          curl -fsSL https://ollama.com/install.sh | sh
+
+      - name: Start Ollama
+        run: |
+          ollama serve > /tmp/ollama.log 2>&1 &
+          sleep 5
+
+      - name: Download Ollama model
+        run: |
+          ollama pull qwen3:0.6b
 
       - name: Run tests with coverage
         working-directory: 3_1_LLM_agent
         run: |
           python -m coverage run -m pytest tests -v
           python -m coverage report
+
+      - name: Run LLM agent
+        working-directory: 3_1_LLM_agent
+        run: |
+          python main.py
 
       - name: Generate coverage badge
         working-directory: 3_1_LLM_agent
